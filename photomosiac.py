@@ -1,5 +1,6 @@
 from PIL import Image
 import os
+from math import sqrt
 from pathlib import Path
 
 def split_image(img, height, width):
@@ -14,22 +15,15 @@ def split_image(img, height, width):
             squares.append(img.crop(box))
     return squares
 
-def calculate_average_colors(squares):
-    average_colors = []
-    for i in range(len(squares)):
-        im = squares[i].getdata()
-        #print("squares[i].getdata()=", im)
-        #print("len of squares[i].getdata()=", len(im))
-        avg_red, avg_green, avg_blue = 0, 0, 0
-        im_len = len(im)
-        for j in range(im_len):
-            avg_red += im[j][0]
-            avg_green += im[j][1]
-            avg_blue += im[j][2]
-        average_colors.append( \
-            (avg_red // im_len, avg_green // im_len, avg_blue // im_len) \
-        )
-    return average_colors
+def calculate_average_color(img):
+    data = img.getdata()
+    avg_red, avg_green, avg_blue = 0, 0, 0
+    data_len = len(data)
+    for j in range(data_len):
+        avg_red += data[j][0]
+        avg_green += data[j][1]
+        avg_blue += data[j][2]
+    return (avg_red // data_len, avg_green // data_len, avg_blue // data_len)
 
 def pixellate(avg_colors, image, height, width, square_size):
     print(len(avg_colors))
@@ -69,6 +63,20 @@ def crop_photos(original_img_path):
         im = crop_max_square(im)
         im.save(source_dir_path + file_name_base + str(count), "JPEG")
         count += 1
+    return source_dir_path
+
+def get_average_colors_source_images(image_path):
+    source_avg_colors = []
+    for filename in os.listdir(image_path):
+        im = Image.open(image_path + filename)
+        source_avg_colors.append(calculate_average_color(im))
+    return source_avg_colors
+
+def euclidian_distance(color1, color2):
+    dist = 0
+    for i in range(len(color1)):
+        dist += ((color2[i] - color1[i]) ** 2)
+    return sqrt(dist)
 
 if __name__ == '__main__':
     img = Image.open('monkey.jpg')
@@ -76,8 +84,10 @@ if __name__ == '__main__':
     square_size = 50
     squares = split_image(img, square_size, square_size)
     # http://vision.stanford.edu/aditya86/ImageNetDogs/
-    image_path = 'Images/n02086240-Shih-Tzu/'
+    image_path = 'new_images/'
 
-    avg_colors = calculate_average_colors(squares)
+    square_avg_colors = [calculate_average_color(s) for s in squares]
     #pixellate(avg_colors, img, height, width, square_size)
-    crop_photos(image_path)
+    cropped_path = crop_photos(image_path)
+    source_avg_colors = get_average_colors_source_images(cropped_path)
+    
