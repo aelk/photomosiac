@@ -65,18 +65,41 @@ def crop_photos(original_img_path):
         count += 1
     return source_dir_path
 
-def get_average_colors_source_images(image_path):
-    source_avg_colors = []
+def get_source_file_to_color_map(image_path):
+    source_file_to_color = {}
     for filename in os.listdir(image_path):
+        full_path = image_path + filename
         im = Image.open(image_path + filename)
-        source_avg_colors.append(calculate_average_color(im))
-    return source_avg_colors
+        avg_color = calculate_average_color(im)
+        source_file_to_color[full_path] = avg_color
+    return source_file_to_color
 
 def euclidian_distance(color1, color2):
     dist = 0
     for i in range(len(color1)):
         dist += ((color2[i] - color1[i]) ** 2)
     return sqrt(dist)
+
+def match_square_to_source(square_avg_colors, source_file_to_color):
+    matching_filenames = []
+    for square_color in square_avg_colors:
+        min_dist = float('inf')
+        min_file = ""
+        for filename, source_color in source_file_to_color.items():
+            dist = euclidian_distance(source_color, square_color)
+            if dist < min_dist:
+                min_dist = dist
+                min_file = filename
+        print("min distance:", min_dist)
+        print("min file:", min_file)
+        matching_filenames.append(min_file)
+    return matching_filenames
+
+def build_output_image(matching_filenames):
+    # for file
+       # paste image together to output image
+    # show output image
+    # (fix pixellate)
 
 if __name__ == '__main__':
     img = Image.open('monkey.jpg')
@@ -89,5 +112,7 @@ if __name__ == '__main__':
     square_avg_colors = [calculate_average_color(s) for s in squares]
     #pixellate(avg_colors, img, height, width, square_size)
     cropped_path = crop_photos(image_path)
-    source_avg_colors = get_average_colors_source_images(cropped_path)
-    
+    source_file_to_color = get_source_file_to_color_map(cropped_path)
+    matching_filenames = match_square_to_source(square_avg_colors, source_file_to_color)
+    build_output_image(matching_filenames)
+
